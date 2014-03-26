@@ -77,7 +77,7 @@ class TranslateBehavior extends Behavior
      */
     public function __get($name)
     {
-        if (!in_array($name, $this->translationAttributes) || !isset($this->_models[$name])) {
+        if (!in_array($name, $this->translationAttributes) && !isset($this->_models[$name])) {
             return parent::__get($name);
         }
 
