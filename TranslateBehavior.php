@@ -165,10 +165,8 @@ class TranslateBehavior extends Behavior
         $model = $this->getTranslation();
         $dirty = $model->getDirtyAttributes();
         if (empty($dirty)) {
-            var_dump('NOT DIRTY');
             return true; // we do not need to save anything
         }
-        var_dump('DIRTY');
         /** @var \yii\db\ActiveQuery $relation */
         $relation = $this->owner->getRelation($this->relation);
         $model->{key($relation->link)} = $this->owner->getPrimaryKey();
