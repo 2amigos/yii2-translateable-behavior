@@ -94,6 +94,8 @@ public function behaviors()
             'class' => TranslateBehavior::className(),
             // in case you named your relation differently, you can setup its relation name attribute
             // 'relation' => 'translations',
+            // in case you named the language column differently on your translation schema
+            // 'languageField' => 'language',
             'translationAttributes' => [
                 'title', 'description'
             ]
