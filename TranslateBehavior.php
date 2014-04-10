@@ -81,7 +81,7 @@ class TranslateBehavior extends Behavior
             return parent::__get($name);
         }
 
-        if(isset($this->_models[$name])) {
+        if (isset($this->_models[$name])) {
             return $this->_models[$name];
         }
 
@@ -204,7 +204,7 @@ class TranslateBehavior extends Behavior
         /** @var ActiveRecord $class */
         $class = $relation->modelClass;
 
-        $translation = $class::findOne([$this->languageField => $language]);
+        $translation = $class::findOne([$this->languageField => $language, key($relation->link) => $this->owner->getPrimarykey()]);
         if ($translation === null) {
             $translation = new $class;
             $translation->{key($relation->link)} = $this->owner->getPrimaryKey();
