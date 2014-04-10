@@ -204,7 +204,7 @@ class TranslateBehavior extends Behavior
         /** @var ActiveRecord $class */
         $class = $relation->modelClass;
 
-        $translation = $class::find([$this->languageField => $language]);
+        $translation = $class::findOne([$this->languageField => $language]);
         if ($translation === null) {
             $translation = new $class;
             $translation->{key($relation->link)} = $this->owner->getPrimaryKey();
