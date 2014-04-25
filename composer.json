@@ -1,5 +1,5 @@
 {
-    "name": "2amigos/yii2-translate-behavior",
+    "name": "2amigos/yii2-translateable-behavior",
     "description": "ActiveRecord attributes translations for Yii2.",
     "keywords": ["extension", "behavior", "translation", "yii"],
     "type": "yii2-extension",

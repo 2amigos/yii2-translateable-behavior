@@ -4,7 +4,7 @@
  * @link http://2amigos.us
  * @license http://www.opensource.org/licenses/bsd-license.php New BSD License
  */
-namespace dosamigos\translate;
+namespace dosamigos\translateable;
 
 use Yii;
 use yii\base\Behavior;
@@ -19,7 +19,7 @@ use yii\db\ActiveRecord;
  * @link http://www.2amigos.us/
  * @package dosamigos\translate
  */
-class TranslateBehavior extends Behavior
+class TranslateableBehavior extends Behavior
 {
     /**
      * @var string the name of the translations relation

@@ -1,5 +1,5 @@
-TranslateBehavior for Yii2
-==========================
+TranslateableBehavior for Yii2
+==============================
 
 This behavior has been inspired by the great work of Mikehaertl's
 [Translatable Behavior](https://github.com/mikehaertl/translatable) for Yii 1.*.
@@ -38,12 +38,12 @@ The preferred way to install this extension is through [composer](http://getcomp
 Either run
 
 ```
-php composer.phar require "2amigos/yii2-translate-behavior" "*"
+php composer.phar require "2amigos/yii2-translateable-behavior" "*"
 ```
 or add
 
 ```json
-"2amigos/yii2-translate-behavior" : "*"
+"2amigos/yii2-translateable-behavior" : "*"
 ```
 
 to the require section of your application's `composer.json` file.
@@ -83,7 +83,7 @@ public function getTranslations()
 Finally, we need to attach our behavior.
 
 ```
-use dosamigos\translate\TranslateBehavior;
+use dosamigos\translateable\TranslateableBehavior;
 
 \\ ...
 
@@ -91,7 +91,7 @@ public function behaviors()
 {
     return [
         'trans' => [ // name it the way you want
-            'class' => TranslateBehavior::className(),
+            'class' => TranslateableBehavior::className(),
             // in case you named your relation differently, you can setup its relation name attribute
             // 'relation' => 'translations',
             // in case you named the language column differently on your translation schema
