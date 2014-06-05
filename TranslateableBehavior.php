@@ -210,12 +210,14 @@ class TranslateableBehavior extends Behavior
      */
     private function loadTranslation($language)
     {
+        $translation=null;
         /** @var \yii\db\ActiveQuery $relation */
         $relation = $this->owner->getRelation($this->relation);
         /** @var ActiveRecord $class */
         $class = $relation->modelClass;
-
-        $translation = $class::findOne([$this->languageField => $language, key($relation->link) => $this->owner->getPrimarykey()]);
+        if($this->owner->getPrimarykey()){
+            $translation = $class::findOne([$this->languageField => $language, key($relation->link) => $this->owner->getPrimarykey()]);
+        }
         if ($translation === null) {
             $translation = new $class;
             $translation->{key($relation->link)} = $this->owner->getPrimaryKey();
