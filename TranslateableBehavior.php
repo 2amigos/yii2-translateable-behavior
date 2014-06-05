@@ -115,6 +115,7 @@ class TranslateableBehavior extends Behavior
         $this->populateTransaltions();
         $this->getTranslation($this->getLanguage());
     }
+    
     private function populateTransaltions(){
         //translations
         $aRelated=$this->owner->getRelatedRecords();
@@ -123,8 +124,8 @@ class TranslateableBehavior extends Behavior
                 $this->_models[$model->getAttribute($this->languageField)]=$model;
             }
         }
-        //\yii\helpers\VarDumper::dump($aRealted,10,true);die();
     }
+    
     /**
      * @param Event $event
      */
