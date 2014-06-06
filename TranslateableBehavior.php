@@ -119,8 +119,14 @@ class TranslateableBehavior extends Behavior
     private function populateTransaltions(){
         //translations
         $aRelated=$this->owner->getRelatedRecords();
-        if(isset($aRelated[$this->relation])){
-            foreach($aRelated[$this->relation] as $model){
+        if(isset($aRelated[$this->relation] && !empty($aRelated[$this->relation]))){
+            if(is_array($aRelated[$this->relation])){
+                foreach($aRelated[$this->relation] as $model){
+                    $this->_models[$model->getAttribute($this->languageField)]=$model;
+                }
+            }
+            else{
+                $model=$aRelated[$this->relation];
                 $this->_models[$model->getAttribute($this->languageField)]=$model;
             }
         }
