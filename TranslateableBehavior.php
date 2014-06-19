@@ -112,14 +112,14 @@ class TranslateableBehavior extends Behavior
      */
     public function afterFind($event)
     {
-        $this->populateTransaltions();
+        $this->populateTranslations();
         $this->getTranslation($this->getLanguage());
     }
     
-    private function populateTransaltions(){
+    private function populateTranslations(){
         //translations
         $aRelated=$this->owner->getRelatedRecords();
-        if(isset($aRelated[$this->relation] && !empty($aRelated[$this->relation]))){
+        if(isset($aRelated[$this->relation]) && $aRelated[$this->relation]!=null){
             if(is_array($aRelated[$this->relation])){
                 foreach($aRelated[$this->relation] as $model){
                     $this->_models[$model->getAttribute($this->languageField)]=$model;
@@ -131,7 +131,7 @@ class TranslateableBehavior extends Behavior
             }
         }
     }
-    
+
     /**
      * @param Event $event
      */
