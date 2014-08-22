@@ -112,7 +112,24 @@ class TranslateableBehavior extends Behavior
      */
     public function afterFind($event)
     {
+        $this->populateTranslations();
         $this->getTranslation($this->getLanguage());
+    }
+    
+    private function populateTranslations(){
+        //translations
+        $aRelated=$this->owner->getRelatedRecords();
+        if(isset($aRelated[$this->relation]) && $aRelated[$this->relation]!=null){
+            if(is_array($aRelated[$this->relation])){
+                foreach($aRelated[$this->relation] as $model){
+                    $this->_models[$model->getAttribute($this->languageField)]=$model;
+                }
+            }
+            else{
+                $model=$aRelated[$this->relation];
+                $this->_models[$model->getAttribute($this->languageField)]=$model;
+            }
+        }
     }
 
     /**
@@ -184,7 +201,7 @@ class TranslateableBehavior extends Behavior
         if ($language === null) {
             $language = $this->getLanguage();
         }
-
+        
         if (!isset($this->_models[$language])) {
             $this->_models[$language] = $this->loadTranslation($language);
         }
@@ -199,12 +216,14 @@ class TranslateableBehavior extends Behavior
      */
     private function loadTranslation($language)
     {
+        $translation=null;
         /** @var \yii\db\ActiveQuery $relation */
         $relation = $this->owner->getRelation($this->relation);
         /** @var ActiveRecord $class */
         $class = $relation->modelClass;
-
-        $translation = $class::findOne([$this->languageField => $language, key($relation->link) => $this->owner->getPrimarykey()]);
+        if($this->owner->getPrimarykey()){
+            $translation = $class::findOne([$this->languageField => $language, key($relation->link) => $this->owner->getPrimarykey()]);
+        }
         if ($translation === null) {
             $translation = new $class;
             $translation->{key($relation->link)} = $this->owner->getPrimaryKey();
