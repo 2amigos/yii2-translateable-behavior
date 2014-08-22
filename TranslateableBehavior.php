@@ -60,7 +60,7 @@ class TranslateableBehavior extends Behavior
     }
 
     /**
-     * Make [[$translationAttributes]] writeable
+     * Make [[$translationAttributes]] writable
      */
     public function __set($name, $value)
     {
@@ -108,32 +108,16 @@ class TranslateableBehavior extends Behavior
     }
 
     /**
-     * @param Event $event
+     * @param \yii\base\Event $event
      */
     public function afterFind($event)
     {
         $this->populateTranslations();
         $this->getTranslation($this->getLanguage());
     }
-    
-    private function populateTranslations(){
-        //translations
-        $aRelated=$this->owner->getRelatedRecords();
-        if(isset($aRelated[$this->relation]) && $aRelated[$this->relation]!=null){
-            if(is_array($aRelated[$this->relation])){
-                foreach($aRelated[$this->relation] as $model){
-                    $this->_models[$model->getAttribute($this->languageField)]=$model;
-                }
-            }
-            else{
-                $model=$aRelated[$this->relation];
-                $this->_models[$model->getAttribute($this->languageField)]=$model;
-            }
-        }
-    }
 
     /**
-     * @param Event $event
+     * @param \yii\base\Event $event
      */
     public function afterInsert($event)
     {
@@ -141,7 +125,7 @@ class TranslateableBehavior extends Behavior
     }
 
     /**
-     * @param Event $event
+     * @param \yii\base\Event $event
      */
     public function afterUpdate($event)
     {
@@ -150,6 +134,7 @@ class TranslateableBehavior extends Behavior
 
     /**
      * Sets current model's language
+     *
      * @param $value
      */
     public function setLanguage($value)
@@ -193,7 +178,9 @@ class TranslateableBehavior extends Behavior
 
     /**
      * Returns a related translation model
+     *
      * @param string|null $language the language to return. If null, current sys language
+     *
      * @return ActiveRecord
      */
     public function getTranslation($language = null)
@@ -201,7 +188,7 @@ class TranslateableBehavior extends Behavior
         if ($language === null) {
             $language = $this->getLanguage();
         }
-        
+
         if (!isset($this->_models[$language])) {
             $this->_models[$language] = $this->loadTranslation($language);
         }
@@ -211,18 +198,22 @@ class TranslateableBehavior extends Behavior
 
     /**
      * Loads a specific translation model
+     *
      * @param string $language the language to return
+     *
      * @return null|\yii\db\ActiveQuery|static
      */
     private function loadTranslation($language)
     {
-        $translation=null;
+        $translation = null;
         /** @var \yii\db\ActiveQuery $relation */
         $relation = $this->owner->getRelation($this->relation);
         /** @var ActiveRecord $class */
         $class = $relation->modelClass;
-        if($this->owner->getPrimarykey()){
-            $translation = $class::findOne([$this->languageField => $language, key($relation->link) => $this->owner->getPrimarykey()]);
+        if ($this->owner->getPrimarykey()) {
+            $translation = $class::findOne(
+                [$this->languageField => $language, key($relation->link) => $this->owner->getPrimarykey()]
+            );
         }
         if ($translation === null) {
             $translation = new $class;
@@ -233,4 +224,22 @@ class TranslateableBehavior extends Behavior
         return $translation;
     }
 
+    /**
+     * Populates already loaded translations
+     */
+    private function populateTranslations()
+    {
+        //translations
+        $aRelated = $this->owner->getRelatedRecords();
+        if (isset($aRelated[$this->relation]) && $aRelated[$this->relation] != null) {
+            if (is_array($aRelated[$this->relation])) {
+                foreach ($aRelated[$this->relation] as $model) {
+                    $this->_models[$model->getAttribute($this->languageField)] = $model;
+                }
+            } else {
+                $model = $aRelated[$this->relation];
+                $this->_models[$model->getAttribute($this->languageField)] = $model;
+            }
+        }
+    }
 } 
