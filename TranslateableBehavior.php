@@ -197,6 +197,27 @@ class TranslateableBehavior extends Behavior
     }
 
     /**
+     * Loads all specified languages. For example:
+     *
+     * ```
+     * $model->loadTranslations("en-US");
+     *
+     * $model->loadTranslations(["en-US", "es-ES"]);
+     *
+     * ```
+     *
+     * @param string|array $languages
+     */
+    public function loadTranslations($languages)
+    {
+        $languages = (array)$languages;
+
+        foreach ($languages as $language) {
+            $this->loadTranslation($language);
+        }
+    }
+
+    /**
      * Loads a specific translation model
      *
      * @param string $language the language to return
