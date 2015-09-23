@@ -10,6 +10,7 @@ use Yii;
 use yii\base\Behavior;
 use yii\base\Event;
 use yii\db\ActiveRecord;
+use yii\helpers\ArrayHelper;
 
 /**
  * TranslateBehavior Behavior. Allows to maintain translations of model.
@@ -179,7 +180,11 @@ class TranslateableBehavior extends Behavior
             }
             /** @var \yii\db\ActiveQuery $relation */
             $relation = $this->owner->getRelation($this->relation);
-            $model->{key($relation->link)} = $this->owner->getPrimaryKey();
+            $pks = $relation->link;
+
+            foreach ($pks as $fk => $pk) {
+                $model->$fk = $this->owner->$pk;
+            }
 
             if (!$model->save()) {
                 $ret = false;
@@ -244,15 +249,22 @@ class TranslateableBehavior extends Behavior
         $relation = $this->owner->getRelation($this->relation);
         /** @var ActiveRecord $class */
         $class = $relation->modelClass;
-        if ($this->owner->getPrimarykey()) {
-            $translation = $class::findOne(
-                [$this->languageField => $language, key($relation->link) => $this->owner->getPrimarykey()]
-            );
+        $oldAttributes = $this->owner->getOldAttributes();
+        $searchFields = [$this->languageField => $language];
+
+        foreach ($relation->link as $languageModelField => $mainModelField) {
+            if (empty($oldAttributes)) {
+                $searchFields[$languageModelField] = $this->owner->$mainModelField;
+            } else {
+                $searchFields[$languageModelField] = $oldAttributes[$mainModelField];
+            }
         }
+
+        $translation = $class::findOne($searchFields);
+
         if ($translation === null) {
             $translation = new $class;
-            $translation->{key($relation->link)} = $this->owner->getPrimaryKey();
-            $translation->{$this->languageField} = $language;
+            $translation->setAttributes($searchFields);
         }
 
         return $translation;
