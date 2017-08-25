@@ -56,6 +56,7 @@ class TranslateableBehavior extends Behavior
             ActiveRecord::EVENT_AFTER_FIND => 'afterFind',
             ActiveRecord::EVENT_AFTER_INSERT => 'afterInsert',
             ActiveRecord::EVENT_AFTER_UPDATE => 'afterUpdate',
+            ActiveRecord::EVENT_AFTER_DELETE => 'afterDelete'
         ];
     }
 
@@ -130,6 +131,16 @@ class TranslateableBehavior extends Behavior
     public function afterUpdate($event)
     {
         $this->saveTranslation();
+    }
+
+    /**
+     * @param \yii\base\Event $event
+     */
+    public function afterDelete($event)
+    {
+        foreach ($this->owner->translations as $translation) {
+            $translation->delete();
+        }
     }
 
     /**
