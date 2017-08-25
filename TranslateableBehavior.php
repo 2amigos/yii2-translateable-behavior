@@ -10,6 +10,7 @@ use Yii;
 use yii\base\Behavior;
 use yii\base\Event;
 use yii\db\ActiveRecord;
+use yii\helpers\ArrayHelper;
 
 /**
  * TranslateBehavior Behavior. Allows to maintain translations of model.
@@ -66,7 +67,13 @@ class TranslateableBehavior extends Behavior
     public function __set($name, $value)
     {
         if (in_array($name, $this->translationAttributes)) {
-            $this->getTranslation()->$name = $value;
+            if (is_array($value) and isset($value['translations'])) {
+                foreach ($value['translations'] as $language => $translatedValue) {
+                    $this->getTranslation($language)->$name = $translatedValue;
+                }
+            } else {
+                $this->getTranslation()->$name = $value;
+            }
         } else {
             parent::__set($name, $value);
         }
@@ -175,16 +182,27 @@ class TranslateableBehavior extends Behavior
      */
     public function saveTranslation()
     {
-        $model = $this->getTranslation();
-        $dirty = $model->getDirtyAttributes();
-        if (empty($dirty)) {
-            return true; // we do not need to save anything
-        }
-        /** @var \yii\db\ActiveQuery $relation */
-        $relation = $this->owner->getRelation($this->relation);
-        $model->{key($relation->link)} = $this->owner->getPrimaryKey();
-        return $model->save();
+        $ret = true;
 
+        foreach ($this->_models as $model) {
+            $dirty = $model->getDirtyAttributes();
+            if (empty($dirty)) {
+                continue; // we do not need to save anything
+            }
+            /** @var \yii\db\ActiveQuery $relation */
+            $relation = $this->owner->getRelation($this->relation);
+            $pks = $relation->link;
+
+            foreach ($pks as $fk => $pk) {
+                $model->$fk = $this->owner->$pk;
+            }
+
+            if (!$model->save()) {
+                $ret = false;
+            }
+        }
+
+        return $ret;
     }
 
     /**
@@ -242,15 +260,22 @@ class TranslateableBehavior extends Behavior
         $relation = $this->owner->getRelation($this->relation);
         /** @var ActiveRecord $class */
         $class = $relation->modelClass;
-        if ($this->owner->getPrimarykey()) {
-            $translation = $class::findOne(
-                [$this->languageField => $language, key($relation->link) => $this->owner->getPrimarykey()]
-            );
+        $oldAttributes = $this->owner->getOldAttributes();
+        $searchFields = [$this->languageField => $language];
+
+        foreach ($relation->link as $languageModelField => $mainModelField) {
+            if (empty($oldAttributes)) {
+                $searchFields[$languageModelField] = $this->owner->$mainModelField;
+            } else {
+                $searchFields[$languageModelField] = $oldAttributes[$mainModelField];
+            }
         }
+
+        $translation = $class::findOne($searchFields);
+
         if ($translation === null) {
             $translation = new $class;
-            $translation->{key($relation->link)} = $this->owner->getPrimaryKey();
-            $translation->{$this->languageField} = $language;
+            $translation->setAttributes($searchFields);
         }
 
         return $translation;
