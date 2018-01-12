@@ -171,7 +171,7 @@ class TranslateableBehavior extends Behavior
     public function getLanguage()
     {
         if ($this->_language === null) {
-            $this->_language = Yii::$app->language;
+            $this->_language = strtolower(Yii::$app->language);
         }
         return $this->_language;
     }
