@@ -38,6 +38,11 @@ class TranslateableBehavior extends Behavior
     public $translationAttributes = [];
 
     /**
+     * @var null|boolean is `true` if the loaded translation is loaded from the fallback language
+     */
+    public $isFallback = null;
+
+    /**
      * @var ActiveRecord[] the models holding the translations.
      */
     private $_models = [];
@@ -253,7 +258,7 @@ class TranslateableBehavior extends Behavior
      *
      * @return null|\yii\db\ActiveQuery|static
      */
-    private function loadTranslation($language)
+    private function loadTranslation($language, $isFallback = false)
     {
         $translation = null;
         /** @var \yii\db\ActiveQuery $relation */
@@ -274,9 +279,16 @@ class TranslateableBehavior extends Behavior
         $translation = $class::findOne($searchFields);
 
         if ($translation === null) {
-            $translation = new $class;
-            $translation->setAttributes($searchFields);
+            $fallbackLanguage = Yii::$app->params['fallbackLanguage'][Yii::$app->language];
+            if ($fallbackLanguage && !$isFallback) {
+                return $this->loadTranslation(Yii::$app->params['fallbackLanguage'][Yii::$app->language], true);
+            } else {
+                $translation = new $class;
+                $translation->setAttributes($searchFields);
+            }
         }
+
+        $this->isFallback = $isFallback;
 
         return $translation;
     }
