@@ -4,6 +4,7 @@
  * @link http://2amigos.us
  * @license http://www.opensource.org/licenses/bsd-license.php New BSD License
  */
+
 namespace dosamigos\translateable;
 
 use Yii;
@@ -278,8 +279,13 @@ class TranslateableBehavior extends Behavior
 
         $translation = $class::findOne($searchFields);
 
+        // TODO: this is just a hack for creating records
+        if (Yii::$app->request->isPost) {
+            $isFallback = true;
+        }
+
         if ($translation === null) {
-            $fallbackLanguage = Yii::$app->params['fallbackLanguage'][Yii::$app->language];
+            $fallbackLanguage = Yii::$app->params['fallbackLanguage'][Yii::$app->language] ?? null;
             if ($fallbackLanguage && !$isFallback) {
                 return $this->loadTranslation(Yii::$app->params['fallbackLanguage'][Yii::$app->language], true);
             } else {
