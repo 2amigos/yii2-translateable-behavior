@@ -60,9 +60,9 @@ wish to keep translations of title and description from our tour entity. Our sch
     +--------------+        +--------------+        +-------------------+
     |           id |        |           id |        |                id |
     |        title |  --->  |   created_at |   +    |           tour_id |
-    |  description |        |   updated_at |        |             title |
-    |   updated_at |        |   updated_at |        |          language |
-    |   created_at |        +--------------+        |       description |
+    |  description |        |   updated_at |        |          language |
+    |   created_at |        +--------------+        |             title |
+    |   updated_at |                                |       description |
     +--------------+                                +-------------------+
 
 ```

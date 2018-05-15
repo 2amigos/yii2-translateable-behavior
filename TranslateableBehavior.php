@@ -261,6 +261,7 @@ class TranslateableBehavior extends Behavior
      */
     private function loadTranslation($language, $isFallback = false)
     {
+        /** @var $translation ActiveRecord */
         $translation = null;
         /** @var \yii\db\ActiveQuery $relation */
         $relation = $this->owner->getRelation($this->relation);
@@ -280,21 +281,21 @@ class TranslateableBehavior extends Behavior
         $translation = $class::findOne($searchFields);
 
         // TODO: this is just a hack for creating records
-        if (Yii::$app->request->isPost) {
-            $isFallback = true;
-        }
-
+//        if (Yii::$app->request->isPost) {
+//            $isFallback = false;
+//        }
+//
         if ($translation === null) {
-            $fallbackLanguage = Yii::$app->params['fallbackLanguage'][Yii::$app->language] ?? null;
-            if ($fallbackLanguage && !$isFallback) {
-                return $this->loadTranslation(Yii::$app->params['fallbackLanguage'][Yii::$app->language], true);
-            } else {
+//            $fallbackLanguage = Yii::$app->params['fallbackLanguage'][Yii::$app->language] ?? null;
+//            if ($fallbackLanguage && !$isFallback) {
+//                return $this->loadTranslation(Yii::$app->params['fallbackLanguage'][Yii::$app->language], true);
+//            } else {
                 $translation = new $class;
-                $translation->setAttributes($searchFields);
-            }
+                $translation->setAttributes($searchFields, false);
+//            }
         }
 
-        $this->isFallback = $isFallback;
+//        $this->isFallback = $isFallback;
 
         return $translation;
     }
