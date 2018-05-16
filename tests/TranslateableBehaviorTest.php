@@ -339,5 +339,22 @@ class TranslateableBehaviorTest extends TestCase
         $this->assertEquals(0, (new Query)->from('post_lang')->count('*', ActiveRecord::getDb()));
     }
 
+    public function testEagerLoading()
+    {
+        $this->populateData();
+
+        $posts = Post::find()->where(['id' => 1])->with('translations')->all();
+        $this->assertCount(1, $posts);
+        $post = reset($posts);
+
+        $this->assertEquals('Example', $post->title);
+        $this->assertEquals('Example description', $post->description);
+
+        $post->language = 'de';
+
+        $this->assertEquals('Beispiel', $post->title);
+        $this->assertEquals('Beispiel Beschreibung', $post->description);
+    }
+
     // TODO test composite PK
 }
