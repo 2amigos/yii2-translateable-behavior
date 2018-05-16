@@ -3,6 +3,7 @@
 namespace tests\models;
 
 use dosamigos\translateable\TranslateableBehavior;
+use yii\behaviors\TimestampBehavior;
 
 /**
  *
@@ -25,7 +26,7 @@ class Post extends ActiveRecord
     public function behaviors()
     {
         return [
-            'trans' => [
+            'translate' => [
                 'class' => TranslateableBehavior::className(),
                 // in case you named your relation differently, you can setup its relation name attribute
                 // 'relation' => 'translations',
@@ -35,6 +36,7 @@ class Post extends ActiveRecord
                     'title', 'description'
                 ]
             ],
+            'timestamp' => TimestampBehavior::className(),
         ];
     }
 
@@ -65,8 +67,8 @@ class Post extends ActiveRecord
 
         $db->createCommand()->createTable($tablename, [
             'id' => 'pk',
-            'created_at' => 'datetime NOT NULL',
-            'updated_at' => 'datetime',
+            'created_at' => 'integer NOT NULL',
+            'updated_at' => 'integer',
         ], $tableOptions)->execute();
         $db->createCommand()->createTable($translationTablename, [
             'id' => 'pk',
@@ -75,15 +77,17 @@ class Post extends ActiveRecord
             'title' => 'string',
             'description' => 'string',
         ], $tableOptions)->execute();
-        $db->createCommand()->addForeignKey(
-            "{$translationTablename}_post_fk",
-            $translationTablename,
-            "{$tablename}_id",
-            $tablename,
-            'id',
-            'CASCADE',
-            'CASCADE'
-        )->execute();
+        if ($db->driverName !== 'sqlite') {
+            $db->createCommand()->addForeignKey(
+                "{$translationTablename}_post_fk",
+                $translationTablename,
+                "{$tablename}_id",
+                $tablename,
+                'id',
+                'CASCADE',
+                'CASCADE'
+            )->execute();
+        }
 
     }
 }

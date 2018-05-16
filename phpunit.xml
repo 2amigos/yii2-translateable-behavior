@@ -14,7 +14,7 @@
 
     <filter>
         <whitelist processUncoveredFilesFromWhitelist="true">
-            <directory suffix=".php">.</directory>
+	 		<file>TranslateableBehavior.php</file>
         </whitelist>
     </filter>
 </phpunit>
