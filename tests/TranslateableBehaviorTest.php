@@ -298,6 +298,24 @@ class TranslateableBehaviorTest extends TestCase
         $this->assertEquals('First month of the Year.', $post->description);
     }
 
+    public function testFallbackloop()
+    {
+        $this->populateData();
+
+        $post = Post::find()->where(['id' => 1])->one();
+        $post->fallbackLanguage = [
+            'fr' => 'ru',
+            'ru' => 'fr',
+        ];
+        $post->language = 'fr';
+        $this->assertNull($post->title);
+        $this->assertNull($post->description);
+
+        $post->language = 'ru';
+        $this->assertNull($post->title);
+        $this->assertNull($post->description);
+    }
+
     public function testNoFallbackTranslation()
     {
         $post = new Post();

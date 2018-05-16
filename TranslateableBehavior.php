@@ -103,11 +103,14 @@ class TranslateableBehavior extends Behavior
             return $this->_models[$name];
         }
 
+        $seen = [];
         $language = $this->getLanguage();
         do {
             $model = $this->getTranslation($language);
             $fallbackLanguage = $this->getFallbackLanguage($language);
-            if ($fallbackLanguage === $language) {
+            $seen[$language] = true;
+            if (isset($seen[$fallbackLanguage])) {
+                // break infinite loop in fallback path
                 return $model->$name;
             }
             $language = $fallbackLanguage;
