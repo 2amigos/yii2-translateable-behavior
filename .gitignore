@@ -18,3 +18,8 @@ nbproject
 # mac deployment helpers
 switch
 index
+
+# composer
+/vendor
+/composer.lock
+
