@@ -242,6 +242,20 @@ class TranslateableBehavior extends Behavior
     }
 
     /**
+     * @return bool whether the current language has a native translation.
+     * If `false` the property values use a fallback language.
+     * This is always true for newly created records.
+     */
+    public function getIsFallbackTranslation()
+    {
+        $language = $this->getLanguage();
+        if (!isset($this->_models[$language])) {
+            $this->_models[$language] = $this->loadTranslation($language);
+        }
+        return $this->_models[$language]->isNewRecord;
+    }
+
+    /**
      * Saves current translation model
      * @return bool
      */

@@ -96,10 +96,12 @@ class TranslateableBehaviorTest extends TestCase
         $post->language = 'de';
         $this->assertEquals('Beispiel', $post->title);
         $this->assertEquals('Beispiel Beschreibung', $post->description);
+        $this->assertFalse($post->isFallbackTranslation);
 
         $post->language = 'de-AT';
         $this->assertEquals('Beispiel', $post->title);
         $this->assertEquals('Beispiel Beschreibung', $post->description);
+        $this->assertTrue($post->isFallbackTranslation);
 
         $post = new Post();
         $post->language = 'en';
@@ -114,14 +116,18 @@ class TranslateableBehaviorTest extends TestCase
 
         $post->language = 'de';
         $this->assertEquals('Januar', $post->title);
+        $this->assertFalse($post->isFallbackTranslation);
 
         $post->language = 'de-AT';
         $this->assertEquals('Jänner', $post->title);
+        $this->assertFalse($post->isFallbackTranslation);
 
         $post->language = 'ru';
         $this->assertEquals('January', $post->title);
+        $this->assertTrue($post->isFallbackTranslation);
         $post->language = 'ru-RU';
         $this->assertEquals('January', $post->title);
+        $this->assertTrue($post->isFallbackTranslation);
     }
 
     public function testSaveTranslationIndirect()
