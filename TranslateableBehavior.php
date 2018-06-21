@@ -103,19 +103,31 @@ class TranslateableBehavior extends Behavior
             return $this->_models[$name];
         }
 
+        return $this->getAttributeTranslation($name, $this->getLanguage())[0];
+    }
+
+    /**
+     * Retrieve translation for an attribute.
+     * @param string $attribute the attribute name.
+     * @param string $language the desired translation language.
+     * @return array first element is the translation, second element is the language.
+     * Language may differ from `$language` when a fallback translation has been used.
+     */
+    private function getAttributeTranslation($attribute, $language)
+    {
         $seen = [];
-        $language = $this->getLanguage();
         do {
             $model = $this->getTranslation($language);
+            $modelLanguage = $language;
             $fallbackLanguage = $this->getFallbackLanguage($language);
             $seen[$language] = true;
             if (isset($seen[$fallbackLanguage])) {
                 // break infinite loop in fallback path
-                return $model->$name;
+                return [$model->$attribute, $modelLanguage];
             }
             $language = $fallbackLanguage;
-        } while($model->$name === null);
-        return $model->$name;
+        } while($model->$attribute === null);
+        return [$model->$attribute, $modelLanguage];
     }
 
     /**
@@ -263,10 +275,11 @@ class TranslateableBehavior extends Behavior
     {
         $ret = true;
 
-        foreach ($this->_models as $model) {
+        foreach ($this->_models as $language => $model) {
             $dirty = $model->getDirtyAttributes();
-            if (empty($dirty)) {
-                continue; // we do not need to save anything
+            // we do not need to save anything, if nothing has changed or translation is equal to its fallback
+            if (empty($dirty) || $model->isNewRecord && $this->modelEqualsFallbackTranslation($model, $language)) {
+                continue;
             }
             /** @var \yii\db\ActiveQuery $relation */
             $relation = $this->owner->getRelation($this->relation);
@@ -282,6 +295,32 @@ class TranslateableBehavior extends Behavior
         }
 
         return $ret;
+    }
+
+    /**
+     * Check whether translation model has relevant translation data.
+     *
+     * This will return false if any translation is set and different from
+     * the fallback.
+     *
+     * This method is used to only store translations if they differ from the fallback.
+     *
+     * @param ActiveRecord $model
+     * @param string $language
+     * @return bool whether a translation model contains relevant translation data.
+     */
+    private function modelEqualsFallbackTranslation($model, $language)
+    {
+        $fallbackLanguage = $this->getFallbackLanguage($language);
+        foreach($this->translationAttributes as $translationAttribute) {
+            if (!empty($model->$translationAttribute)) {
+                list($translation, $transLanguage) = $this->getAttributeTranslation($translationAttribute, $fallbackLanguage);
+                if ($transLanguage === $language || $model->$translationAttribute !== $translation) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     /**
