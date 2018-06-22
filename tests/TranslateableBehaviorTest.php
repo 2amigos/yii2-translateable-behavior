@@ -304,6 +304,88 @@ class TranslateableBehaviorTest extends TestCase
         $this->assertEquals('First month of the Year.', $post->description);
     }
 
+    public function testDuplicateFallbackTranslation()
+    {
+        $post = new Post();
+        $post->skipSavingDuplicateTranslation = false;
+        $post->fallbackLanguage = [
+            'de' => 'en',
+        ];
+        $post->language = 'en';
+        $post->title = 'Januar'; // intentionally wrong
+        $post->description = 'First month of the Year.';
+        $post->language = 'de';
+        $post->title = 'Januar';
+        $post->description = 'Erster Monat im Jahr.';
+        $post->save(false);
+
+        // fix the english typo ;)
+        $post = Post::find()->where(['id' => $post->id])->one();
+        $post->skipSavingDuplicateTranslation = false;
+        $post->fallbackLanguage = [
+            'de' => 'en',
+        ];
+        $post->language = 'en';
+        $post->title = 'January';
+        $post->save(false);
+
+        $post = Post::find()->where(['id' => $post->id])->one();
+        $post->skipSavingDuplicateTranslation = false;
+        $post->fallbackLanguage = [
+            'de' => 'en',
+        ];
+        $post->language = 'de-AT';
+        $this->assertEquals('Januar', $post->title);
+        $this->assertEquals('Erster Monat im Jahr.', $post->description);
+        $post->language = 'de-CH';
+        $this->assertEquals('Januar', $post->title);
+        $this->assertEquals('Erster Monat im Jahr.', $post->description);
+        $post->language = 'de';
+        $this->assertEquals('Januar', $post->title);
+        $this->assertEquals('Erster Monat im Jahr.', $post->description);
+        $post->language = 'en';
+        $this->assertEquals('January', $post->title);
+        $this->assertEquals('First month of the Year.', $post->description);
+    }
+
+    public function testSkipDuplicateFallbackTranslation()
+    {
+        $post = new Post();
+        $post->skipSavingDuplicateTranslation = true;
+        $post->fallbackLanguage = [
+            'de' => 'en',
+        ];
+        $post->language = 'en';
+        $post->title = 'Januar'; // intentionally wrong
+        $post->description = 'First month of the Year.';
+        $post->language = 'de';
+        $post->title = 'Januar';
+        $post->save(false);
+
+        $post = Post::find()->where(['id' => $post->id])->one();
+        $post->skipSavingDuplicateTranslation = true;
+        $post->fallbackLanguage = [
+            'de' => 'en',
+        ];
+        $post->language = 'en';
+        $post->title = 'January';
+        $post->save(false);
+
+        $post = Post::find()->where(['id' => $post->id])->one();
+        $post->skipSavingDuplicateTranslation = true;
+        $post->fallbackLanguage = [
+            'de' => 'en',
+        ];
+        $post->language = 'de-AT';
+        $this->assertEquals('January', $post->title);
+        $post->language = 'de-CH';
+        $this->assertEquals('January', $post->title);
+        $post->language = 'de';
+        $this->assertEquals('January', $post->title);
+        $post->language = 'en';
+        $this->assertEquals('January', $post->title);
+    }
+
     public function testFallbackloop()
     {
         $this->populateData();
