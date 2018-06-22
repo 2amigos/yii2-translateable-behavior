@@ -43,6 +43,15 @@ class TranslateableBehavior extends Behavior
     public $translationAttributes = [];
 
     /**
+     * @var bool whether to skip saving translations if they are equal to the fallback.
+     * If a model is saved in a different language with fields filled by the fallback translation
+     * this translation will not be saved unless changes were made.
+     * This helps to reduce duplicate entries in the database and allows save records even
+     * if it has not been translated. Defaults to `false`, which means translations will always be saved.
+     */
+    public $skipSavingDuplicateTranslation = false;
+
+    /**
      * @var ActiveRecord[] the models holding the translations.
      */
     private $_models = [];
@@ -278,7 +287,7 @@ class TranslateableBehavior extends Behavior
         foreach ($this->_models as $language => $model) {
             $dirty = $model->getDirtyAttributes();
             // we do not need to save anything, if nothing has changed or translation is equal to its fallback
-            if (empty($dirty) || $model->isNewRecord && $this->modelEqualsFallbackTranslation($model, $language)) {
+            if (empty($dirty) || $this->skipSavingDuplicateTranslation && $model->isNewRecord && $this->modelEqualsFallbackTranslation($model, $language)) {
                 continue;
             }
             /** @var \yii\db\ActiveQuery $relation */
