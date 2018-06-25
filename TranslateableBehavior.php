@@ -221,7 +221,13 @@ class TranslateableBehavior extends Behavior
     /**
      * Sets the model's fallback language.
      *
-     * @param string|array $value
+     * @param string|array|bool $value this can be a string, an array or boolean `false`.
+     *
+     * - An array represents a set of fallback languages where array keys are languages and array values
+     *   are their corresponding fallback languages. If no fallback is defined for a language, the default
+     *   fallback will be the first entry in the array.
+     * - A string represents a single fallback language that applies to all languages.
+     * - If `false` is specified, fallback languages are disabled.
      */
     public function setFallbackLanguage($value)
     {
@@ -239,6 +245,9 @@ class TranslateableBehavior extends Behavior
         }
         if ($forLanguage === null) {
             return $this->_fallbackLanguage;
+        }
+        if ($this->_fallbackLanguage === false) {
+            return $forLanguage;
         }
 
         if (is_array($this->_fallbackLanguage)) {
@@ -269,6 +278,10 @@ class TranslateableBehavior extends Behavior
      */
     public function getIsFallbackTranslation()
     {
+        if ($this->_fallbackLanguage === false) {
+            return false;
+        }
+
         $language = $this->getLanguage();
         if (!isset($this->_models[$language])) {
             $this->_models[$language] = $this->loadTranslation($language);
