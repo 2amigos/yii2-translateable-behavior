@@ -167,6 +167,8 @@ above it will then try `en`.
 
 When the fallback is defined in array format and no fallback can be found for a language, the first fallback is returned.
 
+You may disable the fallback mechanism by setting `fallbackLanguage` to `false`.
+
 If you want to configure fallback languages globally, you can do so by configuring the `TranslateableBehavior` class
 in Yii DI container:
 
