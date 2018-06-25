@@ -252,6 +252,14 @@ class TranslateableBehaviorTest extends TestCase
         
         // a non-specified language
         $this->assertEquals('de-AT', $behavior->getFallbackLanguage('ru'));
+
+        $behavior->setFallbackLanguage(false);
+        $this->assertFalse($behavior->getFallbackLanguage());
+        $this->assertEquals('de-DE', $behavior->getFallbackLanguage('de-DE'));
+        $this->assertEquals('de', $behavior->getFallbackLanguage('de'));
+        $this->assertEquals('uk-UA', $behavior->getFallbackLanguage('uk-UA'));
+        $this->assertEquals('uk', $behavior->getFallbackLanguage('uk'));
+        $this->assertEquals('en-GB', $behavior->getFallbackLanguage('en-GB'));
     }
 
     public function testFallbackTranslation()
@@ -434,6 +442,34 @@ class TranslateableBehaviorTest extends TestCase
         $post->language = 'de';
         $this->assertNull($post->title);
         $this->assertNull($post->description);
+    }
+
+    public function testFallbackTranslationDisabled()
+    {
+        $post = new Post();
+        $post->language = 'en';
+        $post->title = 'January';
+        $post->description = 'January';
+        $post->save(false);
+
+        $post = Post::find()->where(['id' => $post->id])->one();
+        $post->fallbackLanguage = false;
+        $post->language = 'en';
+        $this->assertEquals('January', $post->title);
+        $this->assertEquals('January', $post->description);
+        $this->assertFalse($post->isFallbackTranslation);
+        $post->language = 'en-GB';
+        $this->assertNull($post->title);
+        $this->assertNull($post->description);
+        $this->assertFalse($post->isFallbackTranslation);
+        $post->language = 'de';
+        $this->assertNull($post->title);
+        $this->assertNull($post->description);
+        $this->assertFalse($post->isFallbackTranslation);
+        $post->language = 'de-DE';
+        $this->assertNull($post->title);
+        $this->assertNull($post->description);
+        $this->assertFalse($post->isFallbackTranslation);
     }
 
     public function testDelete()
