@@ -4,6 +4,7 @@
  * @link http://2amigos.us
  * @license http://www.opensource.org/licenses/bsd-license.php New BSD License
  */
+
 namespace dosamigos\translateable;
 
 use Yii;
@@ -14,6 +15,10 @@ use yii\helpers\ArrayHelper;
 
 /**
  * TranslateBehavior Behavior. Allows to maintain translations of model.
+ *
+ * @property string $language the language to use for reading and storing translations.
+ * @property string|array $fallbackLanguage the language or list of languages to use in case a translation is not available.
+ * @property ActiveRecord $owner
  *
  * @author Antonio Ramirez <amigo.cobos@gmail.com>
  * @link http://www.ramirezcobos.com/
@@ -38,6 +43,15 @@ class TranslateableBehavior extends Behavior
     public $translationAttributes = [];
 
     /**
+     * @var bool whether to skip saving translations if they are equal to the fallback.
+     * If a model is saved in a different language with fields filled by the fallback translation
+     * this translation will not be saved unless changes were made.
+     * This helps to reduce duplicate entries in the database and allows save records even
+     * if it has not been translated. Defaults to `false`, which means translations will always be saved.
+     */
+    public $skipSavingDuplicateTranslation = false;
+
+    /**
      * @var ActiveRecord[] the models holding the translations.
      */
     private $_models = [];
@@ -46,6 +60,11 @@ class TranslateableBehavior extends Behavior
      * @var string the language selected.
      */
     private $_language;
+
+    /**
+     * @var string the language selected.
+     */
+    private $_fallbackLanguage;
 
 
     /**
@@ -93,8 +112,31 @@ class TranslateableBehavior extends Behavior
             return $this->_models[$name];
         }
 
-        $model = $this->getTranslation();
-        return $model->$name;
+        return $this->getAttributeTranslation($name, $this->getLanguage())[0];
+    }
+
+    /**
+     * Retrieve translation for an attribute.
+     * @param string $attribute the attribute name.
+     * @param string $language the desired translation language.
+     * @return array first element is the translation, second element is the language.
+     * Language may differ from `$language` when a fallback translation has been used.
+     */
+    private function getAttributeTranslation($attribute, $language)
+    {
+        $seen = [];
+        do {
+            $model = $this->getTranslation($language);
+            $modelLanguage = $language;
+            $fallbackLanguage = $this->getFallbackLanguage($language);
+            $seen[$language] = true;
+            if (isset($seen[$fallbackLanguage])) {
+                // break infinite loop in fallback path
+                return [$model->$attribute, $modelLanguage];
+            }
+            $language = $fallbackLanguage;
+        } while($model->$attribute === null);
+        return [$model->$attribute, $modelLanguage];
     }
 
     /**
@@ -103,7 +145,7 @@ class TranslateableBehavior extends Behavior
      */
     public function canSetProperty($name, $checkVars = true)
     {
-        return in_array($name, $this->translationAttributes) ? true : parent::canSetProperty($name, $checkVars);
+        return in_array($name, $this->translationAttributes, true) ? true : parent::canSetProperty($name, $checkVars);
     }
 
     /**
@@ -112,7 +154,7 @@ class TranslateableBehavior extends Behavior
      */
     public function canGetProperty($name, $checkVars = true)
     {
-        return in_array($name, $this->translationAttributes) ? true : parent::canGetProperty($name, $checkVars);
+        return in_array($name, $this->translationAttributes, true) ? true : parent::canGetProperty($name, $checkVars);
     }
 
     /**
@@ -177,6 +219,77 @@ class TranslateableBehavior extends Behavior
     }
 
     /**
+     * Sets the model's fallback language.
+     *
+     * @param string|array|bool $value this can be a string, an array or boolean `false`.
+     *
+     * - An array represents a set of fallback languages where array keys are languages and array values
+     *   are their corresponding fallback languages. If no fallback is defined for a language, the default
+     *   fallback will be the first entry in the array.
+     * - A string represents a single fallback language that applies to all languages.
+     * - If `false` is specified, fallback languages are disabled.
+     */
+    public function setFallbackLanguage($value)
+    {
+        $this->_fallbackLanguage = $value;
+    }
+
+    /**
+     * Returns current models' fallback language. If null, will return app's configured source language.
+     * @return string
+     */
+    public function getFallbackLanguage($forLanguage = null)
+    {
+        if ($this->_fallbackLanguage === null) {
+            $this->_fallbackLanguage = Yii::$app->sourceLanguage;
+        }
+        if ($forLanguage === null) {
+            return $this->_fallbackLanguage;
+        }
+        if ($this->_fallbackLanguage === false) {
+            return $forLanguage;
+        }
+
+        if (is_array($this->_fallbackLanguage)) {
+            if (isset($this->_fallbackLanguage[$forLanguage])) {
+                return $this->_fallbackLanguage[$forLanguage];
+            }
+            // check fallback de-DE -> de
+            $fallbackLanguage = substr($forLanguage, 0, 2);
+            if ($forLanguage !== $fallbackLanguage) {
+                return $fallbackLanguage;
+            }
+            // when no fallback is available, use the first defined fallback
+            return reset($this->_fallbackLanguage);
+        }
+
+        // check fallback de-DE -> de
+        $fallbackLanguage = substr($forLanguage, 0, 2);
+        if ($forLanguage !== $fallbackLanguage) {
+            return $fallbackLanguage;
+        }
+        return $this->_fallbackLanguage;
+    }
+
+    /**
+     * @return bool whether the current language has a native translation.
+     * If `false` the property values use a fallback language.
+     * This is always true for newly created records.
+     */
+    public function getIsFallbackTranslation()
+    {
+        if ($this->_fallbackLanguage === false) {
+            return false;
+        }
+
+        $language = $this->getLanguage();
+        if (!isset($this->_models[$language])) {
+            $this->_models[$language] = $this->loadTranslation($language);
+        }
+        return $this->_models[$language]->isNewRecord;
+    }
+
+    /**
      * Saves current translation model
      * @return bool
      */
@@ -184,10 +297,11 @@ class TranslateableBehavior extends Behavior
     {
         $ret = true;
 
-        foreach ($this->_models as $model) {
+        foreach ($this->_models as $language => $model) {
             $dirty = $model->getDirtyAttributes();
-            if (empty($dirty)) {
-                continue; // we do not need to save anything
+            // we do not need to save anything, if nothing has changed or translation is equal to its fallback
+            if (empty($dirty) || $this->skipSavingDuplicateTranslation && $model->isNewRecord && $this->modelEqualsFallbackTranslation($model, $language)) {
+                continue;
             }
             /** @var \yii\db\ActiveQuery $relation */
             $relation = $this->owner->getRelation($this->relation);
@@ -203,6 +317,32 @@ class TranslateableBehavior extends Behavior
         }
 
         return $ret;
+    }
+
+    /**
+     * Check whether translation model has relevant translation data.
+     *
+     * This will return false if any translation is set and different from
+     * the fallback.
+     *
+     * This method is used to only store translations if they differ from the fallback.
+     *
+     * @param ActiveRecord $model
+     * @param string $language
+     * @return bool whether a translation model contains relevant translation data.
+     */
+    private function modelEqualsFallbackTranslation($model, $language)
+    {
+        $fallbackLanguage = $this->getFallbackLanguage($language);
+        foreach($this->translationAttributes as $translationAttribute) {
+            if (!empty($model->$translationAttribute)) {
+                list($translation, $transLanguage) = $this->getAttributeTranslation($translationAttribute, $fallbackLanguage);
+                if ($transLanguage === $language || $model->$translationAttribute !== $translation) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     /**
@@ -242,7 +382,7 @@ class TranslateableBehavior extends Behavior
         $languages = (array)$languages;
 
         foreach ($languages as $language) {
-            $this->loadTranslation($language);
+            $this->getTranslation($language);
         }
     }
 
@@ -255,6 +395,7 @@ class TranslateableBehavior extends Behavior
      */
     private function loadTranslation($language)
     {
+        /** @var $translation ActiveRecord */
         $translation = null;
         /** @var \yii\db\ActiveQuery $relation */
         $relation = $this->owner->getRelation($this->relation);
@@ -275,7 +416,7 @@ class TranslateableBehavior extends Behavior
 
         if ($translation === null) {
             $translation = new $class;
-            $translation->setAttributes($searchFields);
+            $translation->setAttributes($searchFields, false);
         }
 
         return $translation;
