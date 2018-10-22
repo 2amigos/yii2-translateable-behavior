@@ -52,6 +52,13 @@ class TranslateableBehavior extends Behavior
     public $skipSavingDuplicateTranslation = false;
 
     /**
+     * @var string the ActiveRecord event to perform deletion of related translation records if a record is deleted.
+     * The default is `ActiveRecord::EVENT_AFTER_DELETE`.
+     * You may set this to `false` to disable deletion and rely on DB foreign key cascade or implement your own method.
+     */
+    public $deleteEvent = ActiveRecord::EVENT_AFTER_DELETE;
+
+    /**
      * @var ActiveRecord[] the models holding the translations.
      */
     private $_models = [];
@@ -72,12 +79,17 @@ class TranslateableBehavior extends Behavior
      */
     public function events()
     {
-        return [
+        $events = [
             ActiveRecord::EVENT_AFTER_FIND => 'afterFind',
             ActiveRecord::EVENT_AFTER_INSERT => 'afterInsert',
             ActiveRecord::EVENT_AFTER_UPDATE => 'afterUpdate',
-            ActiveRecord::EVENT_AFTER_DELETE => 'afterDelete'
         ];
+
+        if ($this->deleteEvent) {
+            $events[$this->deleteEvent] = 'afterDelete';
+        }
+
+        return $events;
     }
 
     /**
@@ -187,7 +199,7 @@ class TranslateableBehavior extends Behavior
      */
     public function afterDelete($event)
     {
-        foreach ($this->owner->translations as $translation) {
+        foreach ($this->owner->{$this->relation} as $translation) {
             $translation->delete();
         }
     }

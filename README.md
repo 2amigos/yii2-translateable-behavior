@@ -176,6 +176,16 @@ in Yii DI container:
 Yii::$container->set('dosamigos\translateable\TranslateableBehavior', ['fallbackLanguage' => 'de']);
 ```
 
+
+### Deleting translations
+
+By default, when an active record is deleted, translation records are deleted in the `afterSave` event.
+However some database scenarios require different configuration, in case foreign keys restrict the deletion of records.
+
+You may configure `'deleteEvent'` to be either `ActiveRecord::EVENT_BEFORE_DELETE` or `ActiveRecord::EVENT_AFTER_DELETE` to
+control on which event the deletion of records should be performed.
+You may set `'deleteEvent'` to `false` to disable deletion and rely on DB foreign key cascade or implement your own method.
+
 > [![2amigOS!](http://www.gravatar.com/avatar/55363394d72945ff7ed312556ec041e0.png)](http://www.2amigos.us)  
 <i>Web development has never been so fun!</i>  
 [www.2amigos.us](http://www.2amigos.us)
