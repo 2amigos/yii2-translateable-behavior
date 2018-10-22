@@ -186,6 +186,9 @@ You may configure `'deleteEvent'` to be either `ActiveRecord::EVENT_BEFORE_DELET
 control on which event the deletion of records should be performed.
 You may set `'deleteEvent'` to `false` to disable deletion and rely on DB foreign key cascade or implement your own method.
 
+When using the Translateablebehavior in an ActiveRecord you should enable [transactions()](https://www.yiiframework.com/doc/api/2.0/yii-db-activerecord#transactions()-detail)
+for the delete operation.
+
 > [![2amigOS!](http://www.gravatar.com/avatar/55363394d72945ff7ed312556ec041e0.png)](http://www.2amigos.us)  
 <i>Web development has never been so fun!</i>  
 [www.2amigos.us](http://www.2amigos.us)

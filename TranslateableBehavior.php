@@ -58,6 +58,23 @@ class TranslateableBehavior extends Behavior
      */
     public $deleteEvent = ActiveRecord::EVENT_AFTER_DELETE;
 
+    const DELETE_ALL = 'all';
+    const DELETE_LAST = 'last';
+
+    /**
+     * @var string this property allows to control whether an active record can be deleted when it has translation records attached.
+     *
+     * - `DELETE_ALL`: Allows the deletion of a record without restriction. All translations will be deleted too. (default)
+     * - `DELETE_LAST`: Allows the deletion of a record only when it has a single translation attached.
+     *   To delete a record, first all translations have to be removed until only one translation exists.
+     *   This behavior can be useful in combination with permission management where permission restricts access to different
+     *   languages of a record.
+     *
+     * This property will only be used when `$deleteEvent` is `ActiveRecord::EVENT_BEFORE_DELETE` as it needs to prevent
+     * deletion of the record, which is only possible before deletion.
+     */
+    public $restrictDeletion = self::DELETE_ALL;
+
     /**
      * @var ActiveRecord[] the models holding the translations.
      */
@@ -195,10 +212,19 @@ class TranslateableBehavior extends Behavior
     }
 
     /**
-     * @param \yii\base\Event $event
+     * @param \yii\base\ModelEvent $event
      */
     public function afterDelete($event)
     {
+        if ($this->deleteEvent === ActiveRecord::EVENT_BEFORE_DELETE && $this->restrictDeletion === self::DELETE_LAST) {
+            // only allow deletion if this record has not more than one translation
+            $count = count($this->owner->{$this->relation});
+            if ($count > 1) {
+                $event->isValid = false;
+                $event->handled = true;
+                return;
+            }
+        }
         foreach ($this->owner->{$this->relation} as $translation) {
             $translation->delete();
         }
