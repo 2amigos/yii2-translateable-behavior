@@ -48,8 +48,35 @@ class TranslateableBehavior extends Behavior
      * this translation will not be saved unless changes were made.
      * This helps to reduce duplicate entries in the database and allows save records even
      * if it has not been translated. Defaults to `false`, which means translations will always be saved.
+     * @since 1.0.4
      */
     public $skipSavingDuplicateTranslation = false;
+
+    /**
+     * @var string the ActiveRecord event to perform deletion of related translation records if a record is deleted.
+     * The default is `ActiveRecord::EVENT_AFTER_DELETE`.
+     * You may set this to `false` to disable deletion and rely on DB foreign key cascade or implement your own method.
+     * @since 1.0.5
+     */
+    public $deleteEvent = ActiveRecord::EVENT_AFTER_DELETE;
+
+    const DELETE_ALL = 'all';
+    const DELETE_LAST = 'last';
+
+    /**
+     * @var string this property allows to control whether an active record can be deleted when it has translation records attached.
+     *
+     * - `DELETE_ALL`: Allows the deletion of a record without restriction. All translations will be deleted too. (default)
+     * - `DELETE_LAST`: Allows the deletion of a record only when it has a single translation attached.
+     *   To delete a record, first all translations have to be removed until only one translation exists.
+     *   This behavior can be useful in combination with permission management where permission restricts access to different
+     *   languages of a record.
+     *
+     * This property will only be used when `$deleteEvent` is `ActiveRecord::EVENT_BEFORE_DELETE` as it needs to prevent
+     * deletion of the record, which is only possible before deletion.
+     * @since 1.0.5
+     */
+    public $restrictDeletion = self::DELETE_ALL;
 
     /**
      * @var ActiveRecord[] the models holding the translations.
@@ -72,12 +99,17 @@ class TranslateableBehavior extends Behavior
      */
     public function events()
     {
-        return [
+        $events = [
             ActiveRecord::EVENT_AFTER_FIND => 'afterFind',
             ActiveRecord::EVENT_AFTER_INSERT => 'afterInsert',
             ActiveRecord::EVENT_AFTER_UPDATE => 'afterUpdate',
-            ActiveRecord::EVENT_AFTER_DELETE => 'afterDelete'
         ];
+
+        if ($this->deleteEvent) {
+            $events[$this->deleteEvent] = 'afterDelete';
+        }
+
+        return $events;
     }
 
     /**
@@ -183,11 +215,20 @@ class TranslateableBehavior extends Behavior
     }
 
     /**
-     * @param \yii\base\Event $event
+     * @param \yii\base\ModelEvent $event
      */
     public function afterDelete($event)
     {
-        foreach ($this->owner->translations as $translation) {
+        if ($this->deleteEvent === ActiveRecord::EVENT_BEFORE_DELETE && $this->restrictDeletion === self::DELETE_LAST) {
+            // only allow deletion if this record has not more than one translation
+            $count = count($this->owner->{$this->relation});
+            if ($count > 1) {
+                $event->isValid = false;
+                $event->handled = true;
+                return;
+            }
+        }
+        foreach ($this->owner->{$this->relation} as $translation) {
             $translation->delete();
         }
     }
