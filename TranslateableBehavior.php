@@ -48,6 +48,7 @@ class TranslateableBehavior extends Behavior
      * this translation will not be saved unless changes were made.
      * This helps to reduce duplicate entries in the database and allows save records even
      * if it has not been translated. Defaults to `false`, which means translations will always be saved.
+     * @since 1.0.4
      */
     public $skipSavingDuplicateTranslation = false;
 
@@ -55,6 +56,7 @@ class TranslateableBehavior extends Behavior
      * @var string the ActiveRecord event to perform deletion of related translation records if a record is deleted.
      * The default is `ActiveRecord::EVENT_AFTER_DELETE`.
      * You may set this to `false` to disable deletion and rely on DB foreign key cascade or implement your own method.
+     * @since 1.0.5
      */
     public $deleteEvent = ActiveRecord::EVENT_AFTER_DELETE;
 
@@ -72,6 +74,7 @@ class TranslateableBehavior extends Behavior
      *
      * This property will only be used when `$deleteEvent` is `ActiveRecord::EVENT_BEFORE_DELETE` as it needs to prevent
      * deletion of the record, which is only possible before deletion.
+     * @since 1.0.5
      */
     public $restrictDeletion = self::DELETE_ALL;
 
