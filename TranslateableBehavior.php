@@ -341,7 +341,7 @@ class TranslateableBehavior extends Behavior
         foreach ($this->_models as $language => $model) {
             $dirty = $model->getDirtyAttributes();
             // we do not need to save anything, if nothing has changed or translation is equal to its fallback
-            if (empty($dirty) || $this->skipSavingDuplicateTranslation && $model->isNewRecord && $this->modelEqualsFallbackTranslation($model, $language)) {
+            if (empty($dirty) || ($this->skipSavingDuplicateTranslation && $model->isNewRecord && $this->modelEqualsFallbackTranslation($model, $language))) {
                 continue;
             }
             /** @var \yii\db\ActiveQuery $relation */
@@ -376,7 +376,7 @@ class TranslateableBehavior extends Behavior
     {
         $fallbackLanguage = $this->getFallbackLanguage($language);
         foreach($this->translationAttributes as $translationAttribute) {
-            if (!empty($model->$translationAttribute)) {
+            if (isset($model->$translationAttribute)) {
                 list($translation, $transLanguage) = $this->getAttributeTranslation($translationAttribute, $fallbackLanguage);
                 if ($transLanguage === $language || $model->$translationAttribute !== $translation) {
                     return false;
