@@ -392,6 +392,113 @@ class TranslateableBehaviorTest extends TestCase
         $this->assertEquals('January', $post->title);
         $post->language = 'en';
         $this->assertEquals('January', $post->title);
+
+    }
+
+    public function testSkipDuplicateFallbackTranslationEmptyEdgeCase()
+    {
+
+        $fallbackLanguages = [
+            'de' => 'en',
+            'ru' => 'en',
+            'fr' => 'en',
+        ];
+
+        // When saving a model for the first time, the translation must
+        // be saved even if all attributes have "empty" values ("",0,zero,....).
+        $post = new Post();
+        $post->skipSavingDuplicateTranslation = true;
+        $post->fallbackLanguage = $fallbackLanguages;
+        $post->language = 'en';
+        $post->title = ''; // intentionally empty
+        $post->description = 0;
+        $post->save(false);
+
+        $post = Post::find()->where(['id' => $post->id])->one();
+        $this->assertNotNull($post);
+        $postLangCount = PostLang::find()->where(['post_id' => $post->id])->count();
+        $this->assertEquals(1, $postLangCount);
+        $postLang = PostLang::find()->where(['post_id' => $post->id])->one();
+        $this->assertEquals('en', $postLang->language);
+        $post->language = 'en';
+        $this->assertEquals('', $post->title);
+
+        // if we don't change anything (typesave)
+        // no additional translation should be saved
+        $post = Post::find()->where(['id' => $post->id])->one();
+        $post->skipSavingDuplicateTranslation = true;
+        $post->fallbackLanguage = $fallbackLanguages;
+        $post->language = 'en';
+        $post->title = '';
+        $post->description = 0;
+        $post->language = 'de';
+        $post->title = '';
+        $post->description = 0;
+        $post->save(false);
+        $post = Post::find()->where(['id' => $post->id])->one();
+        $this->assertNotNull($post);
+        $postLangCount = PostLang::find()->where(['post_id' => $post->id])->count();
+        $this->assertEquals(1, $postLangCount);
+        $postLang = PostLang::find()->where(['post_id' => $post->id])->one();
+        $this->assertEquals('en', $postLang->language);
+        $post->language = 'en';
+        $this->assertEquals('', $post->title);
+        $post->language = 'de';
+        $this->assertEquals('', $post->title);
+
+
+        // if we change any type (empty string to int 0 in this case)
+        // additional translation must be saved
+        $post = Post::find()->where(['id' => $post->id])->one();
+        $post->skipSavingDuplicateTranslation = true;
+        $post->fallbackLanguage = $fallbackLanguages;
+        $post->language = 'en';
+        $post->title = '';
+        $post->description = 0;
+        $post->language = 'ru';
+        $post->title = 0; // changed empty string to int 0
+        $post->description = 0;
+        $post->save(false);
+        $post = Post::find()->where(['id' => $post->id])->one();
+        $this->assertNotNull($post);
+        $postLangCount = PostLang::find()->where(['post_id' => $post->id])->count();
+        $this->assertEquals(2, $postLangCount);
+        $post->language = 'en';
+        $this->assertEquals('', $post->title);
+        $post->language = 'de';
+        $this->assertEquals('', $post->title);
+        $post->language = 'ru';
+        $this->assertEquals(0, $post->title);
+
+        // if we change any values (title in this case)
+        // additional translation must be saved
+        $post = Post::find()->where(['id' => $post->id])->one();
+        $this->assertNotNull($post);
+        $postLangCount = PostLang::find()->where(['post_id' => $post->id])->count();
+        $this->assertEquals(2, $postLangCount);
+        $post = Post::find()->where(['id' => $post->id])->one();
+        $post->skipSavingDuplicateTranslation = true;
+        $post->fallbackLanguage = $fallbackLanguages;
+        $post->language = 'en';
+        $post->title = '';
+        $post->description = 0;
+        $post->language = 'fr';
+        $post->title = 'fr title';
+        $post->description = 0;
+        $post->save(false);
+        $post = Post::find()->where(['id' => $post->id])->one();
+        $this->assertNotNull($post);
+        $postLangCount = PostLang::find()->where(['post_id' => $post->id])->count();
+        $this->assertEquals(3, $postLangCount);
+        $post->language = 'en';
+        $this->assertEquals('', $post->title);
+        $post->language = 'de';
+        $this->assertEquals('', $post->title);
+        $post->language = 'ru';
+        $this->assertEquals(0, $post->title);
+        $post->language = 'fr';
+        $this->assertEquals('fr title', $post->title);
+
     }
 
     public function testFallbackloop()
