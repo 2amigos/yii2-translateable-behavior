@@ -44,7 +44,7 @@ php composer.phar require "2amigos/yii2-translateable-behavior"
 or add
 
 ```json
-"2amigos/yii2-translateable-behavior" : "~0.1"
+"2amigos/yii2-translateable-behavior" : "~1.1"
 ```
 
 to the require section of your application's `composer.json` file.
